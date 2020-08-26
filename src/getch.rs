@@ -1,5 +1,5 @@
-mod tui {
-    pub fn getch() -> u8 {
+pub mod tui {
+    fn getch() -> u8 {
         use std::io::Read;
         let org_opts = termios::Termios::from_fd(libc::STDIN_FILENO).unwrap();
         let mut new_opts = org_opts.clone(); // make a mutable copy of termios
@@ -12,16 +12,5 @@ mod tui {
         termios::tcsetattr(libc::STDIN_FILENO, termios::TCSANOW, &org_opts).unwrap(); // reset the stdin to
                                                                                       // original termios data
         buffer[0]
-    }
-}
-
-fn main() {
-    let mut c = 0;
-    while true {
-        c = tui::getch();
-        println!("{}", c as char);
-        if c == 113 {
-            break;
-        }
     }
 }

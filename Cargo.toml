@@ -8,4 +8,5 @@ edition = "2018"
 
 [dependencies]
 rlua = "0.17.0"
-termion = "1.5.5"
+termios = "0.3"
+libc = "0.2.76"
