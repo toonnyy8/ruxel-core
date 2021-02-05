@@ -1,0 +1,4 @@
+{
+    "init":["./init.rhai","./print.rhai"],
+    "cmds_content":["./cmds_content.json"]
+}

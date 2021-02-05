@@ -1,0 +1,6 @@
+[
+    {"regex":"^exit$", "script":"exit_fn()"},
+    {"regex":"^#[0-9a-fA-F]{6}$", "script":"color = rgb_fn(cmd)"},
+    {"regex":"^#[0-9a-fA-F]{8}$", "script":"rgba_fn(cmd)"},
+    {"regex":"^print_init$", "script":"print_init()"}
+]
