@@ -1,1 +1,1 @@
-fn print_init(){print("init rhai");}
+fn print_init(){print("init rhai\n");}
