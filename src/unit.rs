@@ -88,10 +88,10 @@ pub fn as_pos(cmd: String) -> Position {
     Position::new(x, y)
 }
 
-pub fn move_to(cmd: String) -> Position {
+pub fn move_to(pos: Position, cmd: String) -> Position {
     let s = cmd.as_bytes();
-    let mut x = 0;
-    let mut y = 0;
+    let mut x = -1;
+    let mut y = -1;
     enum Setting {
         X,
         Y,
@@ -102,9 +102,11 @@ pub fn move_to(cmd: String) -> Position {
         match s[i] as char {
             'x' => {
                 setting = Setting::X;
+                x = 0
             }
             'y' => {
                 setting = Setting::Y;
+                y = 0
             }
             '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => match setting {
                 Setting::X => x = x * 10 + (s[i] - '0' as u8) as i64,
@@ -113,6 +115,12 @@ pub fn move_to(cmd: String) -> Position {
             },
             _ => {}
         }
+    }
+    if x == -1 {
+        x = pos.x
+    }
+    if y == -1 {
+        y = pos.y
     }
     Position::new(x, y)
 }
