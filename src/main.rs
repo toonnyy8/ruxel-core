@@ -17,26 +17,6 @@ fn default_render(color: tui::Color, cursor: Position) {
 }
 
 fn main() {
-    let config = command::load_json(".ruxel/config.json");
-
-    let mut cmd_content_vec: Vec<serde_json::Value> = Vec::new();
-    for path in config["cmds_content"].as_array().unwrap() {
-        let path = path.as_str().unwrap();
-        let path = &format!(".ruxel/{}", path);
-        let mut _cmd_content_vec = command::load_json(path);
-        let mut _cmd_content_vec = _cmd_content_vec.as_array_mut().unwrap();
-        cmd_content_vec.append(_cmd_content_vec);
-    }
-
-    let cmd_reg_vec = cmd_content_vec
-        .iter()
-        .map(|cmd_content| {
-            let reg_str = cmd_content["regex"].as_str().unwrap();
-            let reg = regex::Regex::new(reg_str).unwrap();
-            return reg;
-        })
-        .collect::<Vec<_>>();
-
     let mut scope = Scope::new();
     scope
         .push("color", tui::Color::default())
@@ -59,14 +39,15 @@ fn main() {
         .register_fn("move_to", move_to)
         .register_fn("default_render", default_render);
 
-    let cmd_ast_vec = cmd_content_vec
-        .iter()
-        .map(|cmd_content| {
-            engine
-                .compile(cmd_content["script"].as_str().unwrap())
-                .unwrap()
-        })
-        .collect::<Vec<_>>();
+    let config = command::load_json(".ruxel/config.json");
+
+    for path in config["init"].as_array().unwrap() {
+        let path = path.as_str().unwrap();
+        let path = &format!(".ruxel/{}", path);
+        let ast = engine.compile_file(path.into()).unwrap();
+        let module = Module::eval_ast_as_new(Scope::new(), &ast, &engine).unwrap();
+        engine.register_global_module(module.into());
+    }
 
     let render_ast_vec = config["render"]
         .as_array()
@@ -79,13 +60,32 @@ fn main() {
         })
         .collect::<Vec<_>>();
 
-    for path in config["init"].as_array().unwrap() {
+    let mut cmd_content_vec: Vec<serde_json::Value> = Vec::new();
+    for path in config["cmds_content"].as_array().unwrap() {
         let path = path.as_str().unwrap();
         let path = &format!(".ruxel/{}", path);
-        let ast = engine.compile_file(path.into()).unwrap();
-        let module = Module::eval_ast_as_new(Scope::new(), &ast, &engine).unwrap();
-        engine.register_global_module(module.into());
+        let mut _cmd_content_vec = command::load_json(path);
+        let mut _cmd_content_vec = _cmd_content_vec.as_array_mut().unwrap();
+        cmd_content_vec.append(_cmd_content_vec);
     }
+
+    let cmd_reg_vec = cmd_content_vec
+        .iter()
+        .map(|cmd_content| {
+            let reg_str = cmd_content["regex"].as_str().unwrap();
+            let reg = regex::Regex::new(reg_str).unwrap();
+            return reg;
+        })
+        .collect::<Vec<_>>();
+
+    let cmd_ast_vec = cmd_content_vec
+        .iter()
+        .map(|cmd_content| {
+            engine
+                .compile(cmd_content["script"].as_str().unwrap())
+                .unwrap()
+        })
+        .collect::<Vec<_>>();
 
     for render_ast in &render_ast_vec {
         let _ = engine.eval_ast_with_scope::<()>(&mut scope, render_ast);
