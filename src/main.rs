@@ -87,25 +87,23 @@ fn main() {
         engine.register_global_module(module.into());
     }
 
-    let stdin = io::stdin();
-
     for render_ast in &render_ast_vec {
-        engine.eval_ast_with_scope::<()>(&mut scope, render_ast);
+        let _ = engine.eval_ast_with_scope::<()>(&mut scope, render_ast);
     }
     io::stdout().flush().unwrap();
-    for line in stdin.lock().lines() {
+    for line in io::stdin().lock().lines() {
         let cmd = trim_newline(line.unwrap());
 
         for idx in 0..cmd_reg_vec.len() {
             if cmd_reg_vec[idx].is_match(&cmd) {
                 scope.set_value("cmd", cmd);
-                engine.eval_ast_with_scope::<()>(&mut scope, &cmd_ast_vec[idx]);
+                let _ = engine.eval_ast_with_scope::<()>(&mut scope, &cmd_ast_vec[idx]);
                 break;
             }
         }
 
         for render_ast in &render_ast_vec {
-            engine.eval_ast_with_scope::<()>(&mut scope, render_ast);
+            let _ = engine.eval_ast_with_scope::<()>(&mut scope, render_ast);
         }
         io::stdout().flush().unwrap();
     }
