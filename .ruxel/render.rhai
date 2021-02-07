@@ -1,2 +1,2 @@
-default_render(color,cursor);
+default_render(canvas,color,cursor);
 print(":");

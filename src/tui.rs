@@ -1,22 +1,49 @@
+use super::unit;
+
 #[derive(Debug, Clone, Copy)]
 pub struct Color {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
-    pub a: u8,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
 }
-
 impl Color {
     pub fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
         Self { r, g, b, a }
     }
     pub fn default() -> Self {
         Self {
-            r: 255,
-            g: 255,
-            b: 255,
-            a: 255,
+            r: 0,
+            g: 0,
+            b: 0,
+            a: 0,
         }
+    }
+    pub fn mix(a: Color, b: Color) -> Self {
+        Self {
+            r: a.r / 2 + b.r / 2,
+            g: a.g / 2 + b.g / 2,
+            b: a.b / 2 + b.b / 2,
+            a: a.a / 2 + b.a / 2,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Canvas {
+    pub data: Vec<Vec<Color>>,
+    pub size: unit::Position,
+}
+
+impl Canvas {
+    pub fn new(size: unit::Position) -> Self {
+        let mut data = Vec::new();
+        for _ in 0..size.y {
+            let mut row = Vec::new();
+            row.resize(size.x as usize, Color::default());
+            data.push(row);
+        }
+        Self { data, size }
     }
 }
 
