@@ -169,3 +169,13 @@ pub fn draw(
 
     unit::Position::new(x, y)
 }
+
+pub fn msg_line_num(msg: String) -> i64 {
+    let mut line_num = 1;
+    for &b in msg.as_bytes() {
+        if b as char == '\n' {
+            line_num += 1;
+        }
+    }
+    line_num
+}

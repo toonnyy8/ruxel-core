@@ -1,0 +1,1 @@
+fn print_hi(){print(a::hi+"\n");}

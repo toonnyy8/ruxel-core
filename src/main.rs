@@ -1,7 +1,7 @@
 use io::BufRead;
 use regex;
+use rhai::RegisterFn;
 use rhai::{Engine, Module, Scope};
-use rhai::{RegisterFn, RegisterResultFn};
 use serde_json;
 use std::io::{self, Write};
 use std::process;
@@ -10,77 +10,56 @@ mod command;
 mod tui;
 mod unit;
 
-fn default_render(canvas: tui::Canvas, color: tui::Color, cursor: unit::Position) {
+fn default_render(canvas: tui::Canvas, color: tui::Color, cursor: unit::Position, up: i64) -> i64 {
+    let mut view = tui::Canvas::new(canvas.size);
+    for y in 0..canvas.size.y {
+        let y = y as usize;
+        for x in 0..canvas.size.x {
+            let x = x as usize;
+            view.data[y][x] = if ((x as i64) < cursor.x && (y as i64) == cursor.y)
+                || ((x as i64) == cursor.x && (y as i64) < cursor.y)
+                || ((x as i64) == cursor.x && (y as i64) == cursor.y && canvas.data[y][x] != color)
+            {
+                if tui::Color::lightness(canvas.data[y][x]) < 128 {
+                    canvas.data[y][x] * 0.75 + tui::Color::new(63, 63, 63, 63)
+                } else {
+                    canvas.data[y][x] * 0.75
+                }
+            } else {
+                canvas.data[y][x]
+            }
+        }
+    }
+
+    tui::clear_up(up);
+
+    let mut up = 0;
     for y in (0..canvas.size.y).step_by(2) {
         let y = y as usize;
         if y != (canvas.size.y - 1) as usize {
             for x in 0..canvas.size.x {
                 let x = x as usize;
-                let pix_t = if cursor.x == x as i64 || cursor.y == y as i64 {
-                    if cursor.x > x as i64 || cursor.y > y as i64 {
-                        tui::Color::mix(
-                            tui::Color::mix(color, canvas.data[y][x]),
-                            canvas.data[y][x],
-                        )
-                    } else if cursor.x == x as i64 && cursor.y == y as i64 {
-                        tui::Color::mix(
-                            tui::Color::mix(color, canvas.data[y][x]),
-                            canvas.data[y][x],
-                        )
-                    } else {
-                        canvas.data[y][x]
-                    }
-                } else {
-                    canvas.data[y][x]
-                };
-                let pix_b = if cursor.x == x as i64 || cursor.y == (y + 1) as i64 {
-                    if cursor.x > x as i64 || cursor.y > (y + 1) as i64 {
-                        tui::Color::mix(
-                            tui::Color::mix(color, canvas.data[y + 1][x]),
-                            canvas.data[y + 1][x],
-                        )
-                    } else if cursor.x == x as i64 && cursor.y == (y + 1) as i64 {
-                        tui::Color::mix(
-                            tui::Color::mix(color, canvas.data[y + 1][x]),
-                            canvas.data[y + 1][x],
-                        )
-                    } else {
-                        canvas.data[y + 1][x]
-                    }
-                } else {
-                    canvas.data[y + 1][x]
-                };
+                let pix_t = view.data[y][x];
+                let pix_b = view.data[y + 1][x];
                 print!("{}", tui::pixel(pix_t, pix_b));
             }
         } else {
             for x in 0..canvas.size.x {
                 let x = x as usize;
-                // let pix_t = canvas.data[y][x];
-
-                let pix_t = if cursor.x == x as i64 || cursor.y == y as i64 {
-                    if cursor.x > x as i64 || cursor.y > y as i64 {
-                        tui::Color::mix(
-                            tui::Color::mix(color, canvas.data[y][x]),
-                            canvas.data[y][x],
-                        )
-                    } else if cursor.x == x as i64 && cursor.y == y as i64 {
-                        tui::Color::mix(
-                            tui::Color::mix(color, canvas.data[y][x]),
-                            canvas.data[y][x],
-                        )
-                    } else {
-                        canvas.data[y][x]
-                    }
-                } else {
-                    canvas.data[y][x]
-                };
+                let pix_t = view.data[y][x];
                 print!("{}", tui::pixel_bottom(pix_t));
             }
         }
-        println!("");
+        print!("\n");
+        up = up + 1;
     }
-    println!("{}", tui::pixel_bottom(color));
-    println!("x:{},y:{}", cursor.x, cursor.y);
+    print!(
+        "{}|x:{},y:{}\n",
+        tui::pixel_bottom(color),
+        cursor.x,
+        cursor.y
+    );
+    return up + 1;
 }
 
 fn main() {
@@ -118,16 +97,26 @@ fn main() {
         .register_fn("move_to", command::move_to)
         .register_fn("default_render", default_render)
         .register_type::<tui::Canvas>()
-        .register_fn("draw", command::draw);
+        .register_fn("draw", command::draw)
+        .register_fn("msg_line_num", command::msg_line_num)
+        .register_fn("clear_up", tui::clear_up)
+        .register_fn("clear_down", tui::clear_down);
 
     let config = command::load_json(".ruxel/config.json");
+
+    for module in config["modules"].as_array().unwrap() {
+        let name = module["name"].as_str().unwrap();
+        let path = module["path"].as_str().unwrap();
+        let path = &format!(".ruxel/{}", path);
+        let ast = engine.compile_file(path.into()).unwrap();
+        let module = Module::eval_ast_as_new(Scope::new(), &ast, &engine).unwrap();
+        engine.register_static_module(name, module.into());
+    }
 
     for path in config["init"].as_array().unwrap() {
         let path = path.as_str().unwrap();
         let path = &format!(".ruxel/{}", path);
-        let ast = engine.compile_file(path.into()).unwrap();
-        let module = Module::eval_ast_as_new(Scope::new(), &ast, &engine).unwrap();
-        engine.register_global_module(module.into());
+        let _ = engine.eval_file_with_scope::<()>(&mut scope, path.into());
     }
 
     let render_ast_vec = config["render"]

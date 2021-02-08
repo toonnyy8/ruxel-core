@@ -27,6 +27,64 @@ impl Color {
             a: a.a / 2 + b.a / 2,
         }
     }
+
+    pub fn lightness(a: Color) -> u8 {
+        return ((a.r as u16 + a.g as u16 + a.b as u16) / 3) as u8;
+    }
+}
+impl std::cmp::PartialEq for Color {
+    fn eq(&self, other: &Self) -> bool {
+        self.r == other.r && self.g == other.g && self.b == other.b && self.a == other.a
+    }
+}
+impl std::ops::Add<Color> for Color {
+    type Output = Color;
+
+    fn add(self, _rhs: Color) -> Color {
+        Self {
+            r: self.r + _rhs.r,
+            g: self.g + _rhs.g,
+            b: self.b + _rhs.b,
+            a: self.a + _rhs.a,
+        }
+    }
+}
+impl std::ops::Sub<Color> for Color {
+    type Output = Color;
+
+    fn sub(self, _rhs: Color) -> Color {
+        Self {
+            r: self.r - _rhs.r,
+            g: self.g - _rhs.g,
+            b: self.b - _rhs.b,
+            a: self.a - _rhs.a,
+        }
+    }
+}
+impl std::ops::Div<f64> for Color {
+    type Output = Color;
+
+    fn div(self, _rhs: f64) -> Color {
+        Self {
+            r: (self.r as f64 / _rhs) as u8,
+            g: (self.g as f64 / _rhs) as u8,
+            b: (self.b as f64 / _rhs) as u8,
+            a: (self.a as f64 / _rhs) as u8,
+        }
+    }
+}
+
+impl std::ops::Mul<f64> for Color {
+    type Output = Color;
+
+    fn mul(self, _rhs: f64) -> Color {
+        Self {
+            r: (self.r as f64 * _rhs) as u8,
+            g: (self.g as f64 * _rhs) as u8,
+            b: (self.b as f64 * _rhs) as u8,
+            a: (self.a as f64 * _rhs) as u8,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -58,4 +116,25 @@ pub fn pixel_bottom(upper: Color) -> String {
         "\x1B[38;2;{};{};{}m\u{2580}\x1B[0m",
         upper.r, upper.g, upper.b
     )
+}
+
+pub fn clear_up(line_num: i64) {
+    if line_num != 0 {
+        print!("\x1B[{}F", line_num);
+    }
+    for _ in 0..line_num {
+        print!("\x1B[2K\n");
+    }
+    if line_num != 0 {
+        print!("\x1B[{}F", line_num);
+    }
+}
+
+pub fn clear_down(line_num: i64) {
+    for _ in 0..line_num {
+        print!("\x1B[2K\n");
+    }
+    if line_num != 0 {
+        print!("\x1B[{}F", line_num);
+    }
 }

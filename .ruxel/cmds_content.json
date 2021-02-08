@@ -9,7 +9,11 @@
     },
     {
         "regex": "^print_init$",
-        "script": "print_init()"
+        "script": "a::print_init()"
+    },
+    {
+        "regex": "^print_up$",
+        "script": "b::print_up();b::print_up();"
     },
     {
         "regex": "^([hjkl]([1-9][0-9]*)*)+$",

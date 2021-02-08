@@ -1,1 +1,3 @@
-fn print_init(){print("init rhai\n");}
+let up = 0;
+let msg = "message";
+let down = 0;
