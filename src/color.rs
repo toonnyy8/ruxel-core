@@ -154,7 +154,7 @@ impl ColorRGBA {
         (self.rgb.r, self.rgb.g, self.rgb.b, self.alpha)
     }
     pub fn lightness(&self) -> u8 {
-        (self.rgb.lightness() as f32 * self.alpha as f32 / 255.) as u8
+        (self.rgb.to_f32().lightness() * self.alpha as f32) as u8
     }
 }
 impl std::cmp::PartialEq for ColorRGBA {
