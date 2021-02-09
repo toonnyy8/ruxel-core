@@ -10,8 +10,16 @@ mod command;
 mod tui;
 mod unit;
 
-fn default_render(canvas: tui::Canvas, color: tui::Color, cursor: unit::Position, up: i64) -> i64 {
+fn default_render(
+    canvas: tui::Canvas,
+    color: tui::ColorRGBA,
+    cursor: unit::Position,
+    up: i64,
+) -> i64 {
     let mut view = tui::Canvas::new(canvas.size);
+    let white = tui::ColorRGBA::new(255, 255, 255, 63);
+    let black = tui::ColorRGBA::new(0, 0, 0, 63);
+
     for y in 0..canvas.size.y {
         let y = y as usize;
         for x in 0..canvas.size.x {
@@ -20,10 +28,10 @@ fn default_render(canvas: tui::Canvas, color: tui::Color, cursor: unit::Position
                 || ((x as i64) == cursor.x && (y as i64) < cursor.y)
                 || ((x as i64) == cursor.x && (y as i64) == cursor.y && canvas.data[y][x] != color)
             {
-                if tui::Color::lightness(canvas.data[y][x]) < 128 {
-                    canvas.data[y][x] * 0.75 + tui::Color::new(63, 63, 63, 63)
+                if canvas.data[y][x].lightness() < 128 {
+                    white.compositing(&canvas.data[y][x])
                 } else {
-                    canvas.data[y][x] * 0.75
+                    black.compositing(&canvas.data[y][x])
                 }
             } else {
                 canvas.data[y][x]
@@ -67,7 +75,7 @@ fn main() {
 
     let mut scope = Scope::new();
     scope
-        .push("color", tui::Color::new(255, 255, 255, 255))
+        .push("color", tui::ColorRGBA::new(255, 255, 255, 255))
         .push("cursor", unit::Position::default())
         .push("cmd", "".to_string())
         .push(
@@ -88,8 +96,8 @@ fn main() {
             process::exit(0);
         })
         .register_fn("as_rgb", command::as_rgb)
-        .register_type::<tui::Color>()
-        .register_fn("color_new", tui::Color::new)
+        .register_type::<tui::ColorRGBA>()
+        .register_fn("color_new", tui::ColorRGBA::new)
         .register_type::<unit::Position>()
         .register_fn("pos_new", unit::Position::new)
         .register_fn("as_pos", command::as_pos)
