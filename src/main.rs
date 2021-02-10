@@ -15,6 +15,8 @@ fn default_render(canvas: tui::Canvas, color: tui::Rgba, cursor: unit::Position,
     let mut view = tui::Canvas::new(canvas.size);
     let white = tui::Rgba::new(255, 255, 255, 63);
     let black = tui::Rgba::new(0, 0, 0, 63);
+    let s = "▀";
+    assert_eq!(s, "\u{2580}");
 
     for y in 0..canvas.size.y {
         let y = y as usize;
@@ -45,21 +47,87 @@ fn default_render(canvas: tui::Canvas, color: tui::Rgba, cursor: unit::Position,
                 let x = x as usize;
                 let pix_t = view.data[y][x];
                 let pix_b = view.data[y + 1][x];
-                print!("{}", tui::pixel(pix_t, pix_b));
+                print!("{}", tui::pixel_both(pix_t, pix_b, s));
             }
         } else {
             for x in 0..canvas.size.x {
                 let x = x as usize;
                 let pix_t = view.data[y][x];
-                print!("{}", tui::pixel_bottom(pix_t));
+                tui::pixel_fg(pix_t, s);
             }
+        }
+        print!("\n");
+        up = up + 1;
+    }
+
+    print!(
+        "{}|x:{},y:{}\n",
+        tui::pixel_fg(color, s),
+        cursor.x,
+        cursor.y
+    );
+    return up + 1;
+}
+
+fn custom_render(
+    canvas: tui::Canvas,
+    color: tui::Rgba,
+    cursor: unit::Position,
+    up: i64,
+    s: String,
+    mode: String,
+) -> i64 {
+    let mut view = tui::Canvas::new(canvas.size);
+    let white = tui::Rgba::new(255, 255, 255, 63);
+    let black = tui::Rgba::new(0, 0, 0, 63);
+
+    for y in 0..canvas.size.y {
+        let y = y as usize;
+        for x in 0..canvas.size.x {
+            let x = x as usize;
+            view.data[y][x] = if ((x as i64) < cursor.x && (y as i64) == cursor.y)
+                || ((x as i64) == cursor.x && (y as i64) < cursor.y)
+                || ((x as i64) == cursor.x && (y as i64) == cursor.y && canvas.data[y][x] != color)
+            {
+                if canvas.data[y][x].lightness() < 128 {
+                    white.compositing(&canvas.data[y][x])
+                } else {
+                    black.compositing(&canvas.data[y][x])
+                }
+            } else {
+                canvas.data[y][x]
+            }
+        }
+    }
+
+    tui::clear_up(up);
+
+    let mut up = 0;
+    for y in 0..canvas.size.y {
+        let y = y as usize;
+        for x in 0..canvas.size.x {
+            let x = x as usize;
+            let pix = view.data[y][x];
+
+            print!(
+                "{}",
+                if mode == "fg" {
+                    tui::pixel_fg(pix, &s)
+                } else {
+                    tui::pixel_bg(pix, &s)
+                }
+            );
         }
         print!("\n");
         up = up + 1;
     }
     print!(
         "{}|x:{},y:{}\n",
-        tui::pixel_bottom(color),
+        if mode == "fg" {
+            tui::pixel_fg(color, &s)
+        } else {
+            tui::pixel_bg(color, &s)
+        },
         cursor.x,
         cursor.y
     );
@@ -100,6 +168,7 @@ fn main() {
         .register_fn("+", |a: unit::Position, b: unit::Position| a + b)
         .register_fn("move_to", command::move_to)
         .register_fn("default_render", default_render)
+        .register_fn("custom_render", custom_render)
         .register_type::<tui::Canvas>()
         .register_fn("draw", command::draw)
         .register_fn("msg_line_num", command::msg_line_num)

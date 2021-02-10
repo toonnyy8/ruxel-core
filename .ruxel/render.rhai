@@ -1,6 +1,12 @@
 let msg = cmd;
 clear_down(down);
-let up = default_render(canvas,color,cursor,up);
+
+if render_pipeline == "default" {
+    up = default_render(canvas,color,cursor,up);
+} else if render_pipeline == "custom" {
+    up = custom_render(canvas,color,cursor,up,"  ","bg");
+}
+
 print("\n");
 print(msg);
 print("\x1B[1F");

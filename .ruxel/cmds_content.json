@@ -42,5 +42,13 @@
     {
         "regex": "^save$",
         "script": "save(canvas, \"test.png\");"
+    },
+    {
+        "regex": "^rd$",
+        "script": "let render_pipeline = \"default\";"
+    },
+    {
+        "regex": "^rc$",
+        "script": "let render_pipeline = \"custom\";"
     }
 ]
