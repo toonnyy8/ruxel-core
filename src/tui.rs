@@ -34,20 +34,16 @@ impl Canvas {
     }
 }
 
-pub fn pixel(upper: Rgba, lower: Rgba) -> String {
-    let (upper_r, upper_g, upper_b, _) = upper.rgba();
-    let (lower_r, lower_g, lower_b, _) = lower.rgba();
-    format!(
-        "\x1b[38;2;{};{};{}m\x1b[48;2;{};{};{}m\u{2580}\x1b[0m",
-        upper_r, upper_g, upper_b, lower_r, lower_g, lower_b,
-    )
+pub fn pixel_fg(rgba: Rgba, s: &str) -> String {
+    let (r, g, b, _) = rgba.into();
+    format!("\x1B[38;2;{};{};{}m{}\x1B[0m", r, g, b, s)
 }
-pub fn pixel_bottom(upper: Rgba) -> String {
-    let (upper_r, upper_g, upper_b, _) = upper.rgba();
-    format!(
-        "\x1B[38;2;{};{};{}m\u{2580}\x1B[0m",
-        upper_r, upper_g, upper_b
-    )
+pub fn pixel_bg(rgba: Rgba, s: &str) -> String {
+    let (r, g, b, _) = rgba.into();
+    format!("\x1B[48;2;{};{};{}m{}\x1B[0m", r, g, b, s)
+}
+pub fn pixel_both(fg_rgb: Rgba, bg_rgb: Rgba, s: &str) -> String {
+    pixel_fg(fg_rgb, &pixel_bg(bg_rgb, s))
 }
 
 pub fn clear_up(line_num: i64) {
