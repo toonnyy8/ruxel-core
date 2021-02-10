@@ -3,19 +3,6 @@ use super::unit;
 mod color;
 pub use color::Rgba;
 
-#[derive(Debug, Clone, Copy)]
-struct X<T: std::ops::Add> {
-    r: T,
-}
-impl<T: std::ops::Add<Output = T>> X<T> {
-    pub fn new(r: T) -> Self {
-        Self { r }
-    }
-    pub fn add(self, b: Self) -> Self {
-        Self { r: self.r + b.r }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Canvas {
     pub data: Vec<Vec<Rgba>>,
