@@ -118,9 +118,6 @@ impl Rgba {
             alpha: u16_to_u8(alpha),
         }
     }
-    pub fn rgba(&self) -> (u8, u8, u8, u8) {
-        (self.rgb.r, self.rgb.g, self.rgb.b, self.alpha)
-    }
     pub fn lightness(&self) -> u8 {
         u16_to_u8(self.rgb.to_interim().lightness() * self.alpha as u16 / 255)
     }
@@ -128,5 +125,10 @@ impl Rgba {
 impl std::cmp::PartialEq for Rgba {
     fn eq(&self, other: &Self) -> bool {
         self.rgb == other.rgb && self.alpha == other.alpha
+    }
+}
+impl From<Rgba> for (u8, u8, u8, u8) {
+    fn from(item: Rgba) -> (u8, u8, u8, u8) {
+        (item.rgb.r, item.rgb.g, item.rgb.b, item.alpha)
     }
 }
