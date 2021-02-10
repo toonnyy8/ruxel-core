@@ -20,11 +20,11 @@ impl std::cmp::PartialEq for Rgb {
         self.r == other.r && self.g == other.g && self.b == other.b
     }
 }
-fn u16_to_u8(value: u16) -> u8 {
-    if value > 255 {
+fn u16_to_u8(item: u16) -> u8 {
+    if item > 255 {
         255
     } else {
-        value as u8
+        item as u8
     }
 }
 
