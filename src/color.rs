@@ -118,12 +118,6 @@ impl Rgba {
             alpha: u16_to_u8(alpha),
         }
     }
-    pub fn show(&self) {
-        println!("r:{}", self.rgb.r);
-        println!("g:{}", self.rgb.g);
-        println!("b:{}", self.rgb.b);
-        println!("a:{}", self.alpha);
-    }
     pub fn rgba(&self) -> (u8, u8, u8, u8) {
         (self.rgb.r, self.rgb.g, self.rgb.b, self.alpha)
     }

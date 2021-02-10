@@ -38,5 +38,9 @@
     {
         "regex": "^d([hjkl]([1-9][0-9]*)*)*$",
         "script": "let cursor = draw(canvas, cursor, color, cmd+\"#\");"
+    },
+    {
+        "regex": "^save$",
+        "script": "save(canvas, \"test.png\");"
     }
 ]

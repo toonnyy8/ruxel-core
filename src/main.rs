@@ -7,6 +7,7 @@ use std::io::{self, Write};
 use std::process;
 
 mod command;
+mod file;
 mod tui;
 mod unit;
 
@@ -67,7 +68,6 @@ fn default_render(canvas: tui::Canvas, color: tui::Rgba, cursor: unit::Position,
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    println!("A");
 
     let mut scope = Scope::new();
     scope
@@ -84,7 +84,7 @@ fn main() {
                 },
             )),
         );
-    println!("B");
+
     let mut engine = Engine::new();
     engine
         .on_print(|x| print!("{}", x))
@@ -104,7 +104,8 @@ fn main() {
         .register_fn("draw", command::draw)
         .register_fn("msg_line_num", command::msg_line_num)
         .register_fn("clear_up", tui::clear_up)
-        .register_fn("clear_down", tui::clear_down);
+        .register_fn("clear_down", tui::clear_down)
+        .register_fn("save", file::save);
 
     let config = command::load_json(".ruxel/config.json");
 
