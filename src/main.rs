@@ -10,15 +10,10 @@ mod command;
 mod tui;
 mod unit;
 
-fn default_render(
-    canvas: tui::Canvas,
-    color: tui::ColorRGBA,
-    cursor: unit::Position,
-    up: i64,
-) -> i64 {
+fn default_render(canvas: tui::Canvas, color: tui::Rgba, cursor: unit::Position, up: i64) -> i64 {
     let mut view = tui::Canvas::new(canvas.size);
-    let white = tui::ColorRGBA::new(255, 255, 255, 63);
-    let black = tui::ColorRGBA::new(0, 0, 0, 63);
+    let white = tui::Rgba::new(255, 255, 255, 63);
+    let black = tui::Rgba::new(0, 0, 0, 63);
 
     for y in 0..canvas.size.y {
         let y = y as usize;
@@ -72,10 +67,11 @@ fn default_render(
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+    println!("A");
 
     let mut scope = Scope::new();
     scope
-        .push("color", tui::ColorRGBA::new(255, 255, 255, 255))
+        .push("color", tui::Rgba::new(255, 255, 255, 255))
         .push("cursor", unit::Position::default())
         .push("cmd", "".to_string())
         .push(
@@ -88,7 +84,7 @@ fn main() {
                 },
             )),
         );
-
+    println!("B");
     let mut engine = Engine::new();
     engine
         .on_print(|x| print!("{}", x))
@@ -96,8 +92,8 @@ fn main() {
             process::exit(0);
         })
         .register_fn("as_rgb", command::as_rgb)
-        .register_type::<tui::ColorRGBA>()
-        .register_fn("color_new", tui::ColorRGBA::new)
+        .register_type::<tui::Rgba>()
+        .register_fn("color_new", tui::Rgba::new)
         .register_type::<unit::Position>()
         .register_fn("pos_new", unit::Position::new)
         .register_fn("as_pos", command::as_pos)

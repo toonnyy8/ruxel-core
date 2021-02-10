@@ -1,7 +1,7 @@
 use super::unit;
 #[path = "color.rs"]
 mod color;
-pub use color::ColorRGBA;
+pub use color::Rgba;
 
 #[derive(Debug, Clone, Copy)]
 struct X<T: std::ops::Add> {
@@ -105,7 +105,7 @@ impl<T: std::ops::Add<Output = T>> X<T> {
 
 #[derive(Debug, Clone)]
 pub struct Canvas {
-    pub data: Vec<Vec<ColorRGBA>>,
+    pub data: Vec<Vec<Rgba>>,
     pub size: unit::Position,
 }
 
@@ -114,14 +114,14 @@ impl Canvas {
         let mut data = Vec::new();
         for _ in 0..size.y {
             let mut row = Vec::new();
-            row.resize(size.x as usize, ColorRGBA::default());
+            row.resize(size.x as usize, Rgba::default());
             data.push(row);
         }
         Self { data, size }
     }
 }
 
-pub fn pixel(upper: ColorRGBA, lower: ColorRGBA) -> String {
+pub fn pixel(upper: Rgba, lower: Rgba) -> String {
     let (upper_r, upper_g, upper_b, _) = upper.rgba();
     let (lower_r, lower_g, lower_b, _) = lower.rgba();
     format!(
@@ -129,7 +129,7 @@ pub fn pixel(upper: ColorRGBA, lower: ColorRGBA) -> String {
         upper_r, upper_g, upper_b, lower_r, lower_g, lower_b,
     )
 }
-pub fn pixel_bottom(upper: ColorRGBA) -> String {
+pub fn pixel_bottom(upper: Rgba) -> String {
     let (upper_r, upper_g, upper_b, _) = upper.rgba();
     format!(
         "\x1B[38;2;{};{};{}m\u{2580}\x1B[0m",

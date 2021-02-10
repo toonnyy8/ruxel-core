@@ -1,147 +1,121 @@
-fn clip(value: f32, max: f32, min: f32) -> f32 {
-    if value > max {
-        max
-    } else if value < min {
-        min
-    } else {
-        value
-    }
-}
-
 #[derive(Debug, Clone, Copy)]
-struct ColorRGBf32 {
-    r: f32,
-    g: f32,
-    b: f32,
-}
-impl ColorRGBf32 {
-    fn new(r: f32, g: f32, b: f32) -> Self {
-        Self {
-            r: clip(r, 1., 0.),
-            g: clip(g, 1., 0.),
-            b: clip(b, 1., 0.),
-        }
-    }
-    fn default() -> Self {
-        Self {
-            r: 0.,
-            g: 0.,
-            b: 0.,
-        }
-    }
-    fn to_u8(&self) -> ColorRGB {
-        ColorRGB::new(
-            (self.r * 255.) as u8,
-            (self.g * 255.) as u8,
-            (self.b * 255.) as u8,
-        )
-    }
-    fn lightness(&self) -> f32 {
-        (self.r + self.g + self.b) / 3.
-    }
-}
-impl std::ops::Add<ColorRGBf32> for ColorRGBf32 {
-    type Output = ColorRGBf32;
-
-    fn add(self, _rhs: ColorRGBf32) -> ColorRGBf32 {
-        let r = self.r + _rhs.r;
-        let g = self.g + _rhs.g;
-        let b = self.b + _rhs.b;
-        ColorRGBf32::new(r, g, b)
-    }
-}
-impl std::ops::Mul<f32> for ColorRGBf32 {
-    type Output = ColorRGBf32;
-
-    fn mul(self, _rhs: f32) -> ColorRGBf32 {
-        let r = self.r * _rhs;
-        let g = self.g * _rhs;
-        let b = self.b * _rhs;
-        ColorRGBf32::new(r, g, b)
-    }
-}
-impl std::ops::Div<f32> for ColorRGBf32 {
-    type Output = ColorRGBf32;
-
-    fn div(self, _rhs: f32) -> ColorRGBf32 {
-        let r = self.r / _rhs;
-        let g = self.g / _rhs;
-        let b = self.b / _rhs;
-        ColorRGBf32::new(r, g, b)
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-struct ColorRGB {
+struct Rgb {
     r: u8,
     g: u8,
     b: u8,
 }
-impl ColorRGB {
+impl Rgb {
     fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }
     fn default() -> Self {
-        Self { r: 0, g: 0, b: 0 }
+        Self::new(0, 0, 0)
     }
-    fn to_f32(&self) -> ColorRGBf32 {
-        ColorRGBf32::new(
-            self.r as f32 / 255.,
-            self.g as f32 / 255.,
-            self.b as f32 / 255.,
-        )
-    }
-
-    fn lightness(&self) -> u8 {
-        (self.to_f32().lightness() * 255.) as u8
+    fn to_interim(&self) -> InterimRGB {
+        InterimRGB::new(self.r as u16, self.g as u16, self.b as u16)
     }
 }
-impl std::cmp::PartialEq for ColorRGB {
+impl std::cmp::PartialEq for Rgb {
     fn eq(&self, other: &Self) -> bool {
         self.r == other.r && self.g == other.g && self.b == other.b
     }
 }
+fn u16_to_u8(value: u16) -> u8 {
+    if value > 255 {
+        255
+    } else {
+        value as u8
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
-pub struct ColorRGBA {
-    rgb: ColorRGB,
+struct InterimRGB {
+    r: u16,
+    g: u16,
+    b: u16,
+}
+impl InterimRGB {
+    fn new(r: u16, g: u16, b: u16) -> Self {
+        Self { r, g, b }
+    }
+    fn to_rgb(&self) -> Rgb {
+        Rgb::new(u16_to_u8(self.r), u16_to_u8(self.g), u16_to_u8(self.b))
+    }
+    fn lightness(&self) -> u16 {
+        (self.r + self.g + self.b) / 3
+    }
+}
+impl std::ops::Add<InterimRGB> for InterimRGB {
+    type Output = InterimRGB;
+
+    fn add(self, _rhs: InterimRGB) -> InterimRGB {
+        let r = self.r + _rhs.r;
+        let g = self.g + _rhs.g;
+        let b = self.b + _rhs.b;
+        InterimRGB::new(r, g, b)
+    }
+}
+impl std::ops::Mul<u16> for InterimRGB {
+    type Output = InterimRGB;
+
+    fn mul(self, _rhs: u16) -> InterimRGB {
+        let r = self.r * _rhs;
+        let g = self.g * _rhs;
+        let b = self.b * _rhs;
+        InterimRGB::new(r, g, b)
+    }
+}
+impl std::ops::Div<u16> for InterimRGB {
+    type Output = InterimRGB;
+
+    fn div(self, _rhs: u16) -> InterimRGB {
+        let r = self.r / _rhs;
+        let g = self.g / _rhs;
+        let b = self.b / _rhs;
+        InterimRGB::new(r, g, b)
+    }
+}
+#[derive(Debug, Clone, Copy)]
+pub struct Rgba {
+    rgb: Rgb,
     alpha: u8,
 }
-impl ColorRGBA {
+impl Rgba {
     pub fn new(r: u8, g: u8, b: u8, alpha: u8) -> Self {
         Self {
-            rgb: ColorRGB::new(r, g, b),
+            rgb: Rgb::new(r, g, b),
             alpha,
         }
     }
     pub fn default() -> Self {
         Self {
-            rgb: ColorRGB::default(),
+            rgb: Rgb::default(),
             alpha: 255,
         }
     }
 
-    pub fn compositing(&self, bg: &ColorRGBA) -> Self {
+    pub fn compositing(&self, bg: &Rgba) -> Self {
         let fg = self;
 
-        let fg_alpha = fg.alpha as f32 / 255.;
-        let bg_alpha = bg.alpha as f32 / 255.;
+        let fg_alpha = fg.alpha as u16;
+        let bg_alpha = bg.alpha as u16;
 
-        let fg_rgb = fg.rgb.to_f32();
-        let bg_rgb = bg.rgb.to_f32();
+        let fg_rgb = fg.rgb.to_interim();
+        let bg_rgb = bg.rgb.to_interim();
 
-        let _alpha = bg_alpha * (1. - fg_alpha);
+        let _alpha = bg_alpha * (255 - fg_alpha) / 255;
         let alpha = fg_alpha + _alpha;
 
-        let rgb = if alpha == 0. {
-            ColorRGBf32::default()
+        let rgb = if alpha == 0 {
+            Rgb::new(0, 0, 0)
         } else {
-            (fg_rgb * fg_alpha + bg_rgb * _alpha) / alpha
+            let interim_rgb: InterimRGB = (fg_rgb * fg_alpha + bg_rgb * _alpha) / alpha;
+            interim_rgb.to_rgb()
         };
 
         Self {
-            rgb: rgb.to_u8(),
-            alpha: (alpha * 255.) as u8,
+            rgb: rgb,
+            alpha: u16_to_u8(alpha),
         }
     }
     pub fn show(&self) {
@@ -154,10 +128,10 @@ impl ColorRGBA {
         (self.rgb.r, self.rgb.g, self.rgb.b, self.alpha)
     }
     pub fn lightness(&self) -> u8 {
-        (self.rgb.to_f32().lightness() * self.alpha as f32) as u8
+        u16_to_u8(self.rgb.to_interim().lightness() * self.alpha as u16 / 255)
     }
 }
-impl std::cmp::PartialEq for ColorRGBA {
+impl std::cmp::PartialEq for Rgba {
     fn eq(&self, other: &Self) -> bool {
         self.rgb == other.rgb && self.alpha == other.alpha
     }

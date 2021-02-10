@@ -8,11 +8,11 @@ pub fn load_json(path: &str) -> serde_json::Value {
     serde_json::from_str(&contents).unwrap()
 }
 
-pub fn as_rgb(cmd: String) -> tui::ColorRGBA {
+pub fn as_rgb(cmd: String) -> tui::Rgba {
     let red = u8::from_str_radix(&cmd[1..3], 16).unwrap();
     let green = u8::from_str_radix(&cmd[3..5], 16).unwrap();
     let blue = u8::from_str_radix(&cmd[5..], 16).unwrap();
-    let color = tui::ColorRGBA::new(red, green, blue, 255);
+    let color = tui::Rgba::new(red, green, blue, 255);
     color
 }
 
@@ -104,7 +104,7 @@ pub fn move_to(pos: unit::Position, cmd: String) -> unit::Position {
 pub fn draw(
     canvas: &mut tui::Canvas,
     cursor: unit::Position,
-    color: tui::ColorRGBA,
+    color: tui::Rgba,
     cmd: String,
 ) -> unit::Position {
     let s = cmd.as_bytes();
