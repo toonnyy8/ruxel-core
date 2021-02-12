@@ -16,8 +16,8 @@
         "script": "b::print_up();b::print_up();"
     },
     {
-        "regex": "^([hjkl]([1-9][0-9]*)*)+$",
-        "script": "cursor = cursor + as_pos(cmd+\"#\")"
+        "regex": "^(([1-9][0-9]*)*[hjkl])+$",
+        "script": "cursor = cursor + as_pos(cmd)"
     },
     {
         "regex": "^x(0|[1-9][0-9]*)$",
@@ -36,8 +36,8 @@
         "script": "cursor = move_to(cursor, cmd)"
     },
     {
-        "regex": "^d([hjkl]([1-9][0-9]*)*)*$",
-        "script": "let cursor = draw(canvas, cursor, color, cmd+\"#\");"
+        "regex": "^d(([1-9][0-9]*)*[hjkl])*$",
+        "script": "let cursor = draw(canvas, cursor, color, cmd);"
     },
     {
         "regex": "^save$",

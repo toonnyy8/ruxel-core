@@ -20,40 +20,20 @@ pub fn as_pos(cmd: String) -> unit::Position {
     let s = cmd.as_bytes();
     let mut x = 0;
     let mut y = 0;
-    let mut move_x = 0;
-    let mut move_y = 0;
     let mut step = 0;
     for i in 0..s.len() {
         match s[i] as char {
-            'h' | 'j' | 'k' | 'l' | '#' => {
-                if step == 0 {
-                    x += move_x;
-                    y += move_y;
-                } else {
-                    x += move_x * step;
-                    y += move_y * step;
-                    step = 0;
-                }
-            }
-            _ => {}
-        }
-
-        match s[i] as char {
             'h' => {
-                move_x = -1;
-                move_y = 0;
+                x -= if step == 0 { 1 } else { step };
             }
             'j' => {
-                move_x = 0;
-                move_y = 1;
+                y += if step == 0 { 1 } else { step };
             }
             'k' => {
-                move_x = 0;
-                move_y = -1;
+                y -= if step == 0 { 1 } else { step };
             }
             'l' => {
-                move_x = 1;
-                move_y = 0;
+                x += if step == 0 { 1 } else { step };
             }
             '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
                 step = step * 10 + (s[i] - '0' as u8) as i64
@@ -116,7 +96,30 @@ pub fn draw(
 
     for i in 0..s.len() {
         match s[i] as char {
-            'h' | 'j' | 'k' | 'l' | '#' => {
+            'h' => {
+                move_x = -1;
+                move_y = 0;
+            }
+            'j' => {
+                move_x = 0;
+                move_y = 1;
+            }
+            'k' => {
+                move_x = 0;
+                move_y = -1;
+            }
+            'l' => {
+                move_x = 1;
+                move_y = 0;
+            }
+            '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
+                step = step * 10 + (s[i] - '0' as u8) as i64
+            }
+            _ => {}
+        }
+
+        match s[i] as char {
+            'h' | 'j' | 'k' | 'l' => {
                 if step == 0 {
                     x += move_x;
                     y += move_y;
@@ -139,29 +142,6 @@ pub fn draw(
                 if x < canvas.size.x && 0 <= x && y < canvas.size.y && 0 <= y {
                     canvas.data[y as usize][x as usize] = color;
                 }
-            }
-            _ => {}
-        }
-
-        match s[i] as char {
-            'h' => {
-                move_x = -1;
-                move_y = 0;
-            }
-            'j' => {
-                move_x = 0;
-                move_y = 1;
-            }
-            'k' => {
-                move_x = 0;
-                move_y = -1;
-            }
-            'l' => {
-                move_x = 1;
-                move_y = 0;
-            }
-            '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
-                step = step * 10 + (s[i] - '0' as u8) as i64
             }
             _ => {}
         }

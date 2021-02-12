@@ -6,10 +6,8 @@ use serde_json;
 use std::io::{self, Write};
 use std::process;
 
-mod command;
-mod file;
-mod tui;
-mod unit;
+mod ruxel;
+use ruxel::*;
 
 fn default_render(canvas: tui::Canvas, color: tui::Rgba, cursor: unit::Position, up: i64) -> i64 {
     let mut view = tui::Canvas::new(canvas.size);
@@ -136,6 +134,9 @@ fn custom_render(
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+
+    let __canvas = Canvas_::new(unit::Position::new(10, 10));
+    let __canvas = __canvas.update((1, 1), tui::Rgba::new(255, 55, 200, 255));
 
     let mut scope = Scope::new();
     scope
