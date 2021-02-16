@@ -20,19 +20,19 @@
         "script": "cursor = cursor + as_pos(cmd)"
     },
     {
-        "regex": "^x(0|[1-9][0-9]*)$",
+        "regex": "^(0|[1-9][0-9]*)x$",
         "script": "cursor = move_to(cursor, cmd)"
     },
     {
-        "regex": "^y(0|[1-9][0-9]*)$",
+        "regex": "^(0|[1-9][0-9]*)y$",
         "script": "cursor = move_to(cursor, cmd)"
     },
     {
-        "regex": "^x(0|[1-9][0-9]*)y(0|[1-9][0-9]*)$",
+        "regex": "^(0|[1-9][0-9]*)x(0|[1-9][0-9]*)y$",
         "script": "cursor = move_to(cursor, cmd)"
     },
     {
-        "regex": "^y(0|[1-9][0-9]*)x(0|[1-9][0-9]*)$",
+        "regex": "^(0|[1-9][0-9]*)y(0|[1-9][0-9]*)x$",
         "script": "cursor = move_to(cursor, cmd)"
     },
     {

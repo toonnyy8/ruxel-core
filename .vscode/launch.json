@@ -20,7 +20,7 @@
                 }
             },
             "args": [
-                "x10y10"
+                "10x10y"
             ],
             "cwd": "${workspaceFolder}"
         },

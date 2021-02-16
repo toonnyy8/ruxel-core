@@ -149,7 +149,7 @@ fn main() {
                 unit::Position::default(),
                 match args.get(1) {
                     Some(cmd) => cmd.to_string(),
-                    None => "x11y11".to_string(),
+                    None => "11x11y".to_string(),
                 },
             )),
         );
