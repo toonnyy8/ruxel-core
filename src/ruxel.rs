@@ -4,11 +4,14 @@ pub mod tui;
 #[path = "command.rs"]
 pub mod command;
 
-#[path ="unit.rs"]
+#[path = "unit.rs"]
 pub mod unit;
 
-#[path ="file.rs"]
+#[path = "file.rs"]
 pub mod file;
+
+#[path = "position.rs"]
+pub mod position;
 
 use im_rc as im;
 
