@@ -94,7 +94,7 @@ impl Rgba {
         }
     }
 
-    pub fn compositing(&self, bg: &Rgba) -> Self {
+    pub fn blend(&self, bg: &Rgba) -> Self {
         let fg = self;
 
         let fg_alpha = fg.alpha as u16;

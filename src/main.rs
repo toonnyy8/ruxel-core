@@ -25,9 +25,9 @@ fn default_render(canvas: tui::Canvas, color: tui::Rgba, cursor: unit::Position,
                 || ((x as i64) == cursor.x && (y as i64) == cursor.y && canvas.data[y][x] != color)
             {
                 if canvas.data[y][x].lightness() < 128 {
-                    white.compositing(&canvas.data[y][x])
+                    white.blend(&canvas.data[y][x])
                 } else {
-                    black.compositing(&canvas.data[y][x])
+                    black.blend(&canvas.data[y][x])
                 }
             } else {
                 canvas.data[y][x]
@@ -88,9 +88,9 @@ fn custom_render(
                 || ((x as i64) == cursor.x && (y as i64) == cursor.y && canvas.data[y][x] != color)
             {
                 if canvas.data[y][x].lightness() < 128 {
-                    white.compositing(&canvas.data[y][x])
+                    white.blend(&canvas.data[y][x])
                 } else {
-                    black.compositing(&canvas.data[y][x])
+                    black.blend(&canvas.data[y][x])
                 }
             } else {
                 canvas.data[y][x]
