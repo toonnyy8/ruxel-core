@@ -175,7 +175,11 @@ fn main() {
         .register_fn("msg_line_num", command::msg_line_num)
         .register_fn("clear_up", tui::clear_up)
         .register_fn("clear_down", tui::clear_down)
-        .register_fn("save", file::save);
+        .register_fn("save", file::save)
+        .register_type::<position::Position>()
+        .register_fn("app_road", position::Position::app_road)
+        .register_fn("draw_", command::draw_)
+        .register_fn("as_road", command::as_road);
 
     let config = command::load_json(".ruxel/config.json");
 
