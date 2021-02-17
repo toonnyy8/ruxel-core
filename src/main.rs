@@ -135,9 +135,6 @@ fn custom_render(
 fn main() {
     let args: Vec<String> = std::env::args().collect();
 
-    let __canvas = Canvas_::new(unit::Position::new(10, 10));
-    let __canvas = __canvas.update((1, 1), tui::Rgba::new(255, 55, 200, 255));
-
     let mut scope = Scope::new();
     scope
         .push("color", tui::Rgba::new(255, 255, 255, 255))
@@ -176,8 +173,8 @@ fn main() {
         .register_fn("clear_up", tui::clear_up)
         .register_fn("clear_down", tui::clear_down)
         .register_fn("save", file::save)
-        .register_type::<position::Position>()
-        .register_fn("app_road", position::Position::app_road)
+        .register_type::<ruxel::Position>()
+        .register_fn("app_road", ruxel::Position::app_road)
         .register_fn("draw_", command::draw_)
         .register_fn("as_road", command::as_road);
 
