@@ -1,3 +1,5 @@
+use super::View;
+
 #[derive(Debug, Clone, Copy)]
 pub enum Direction {
     Up,
@@ -8,91 +10,67 @@ pub enum Direction {
     LowerRight,
     Left,
     Right,
+    Middle,
 }
 #[derive(Debug, Clone, Copy)]
 pub struct Position {
-    upper_bound: (u32, u32), // x, y
-    lower_bound: (u32, u32), // x, y
     x: u32,
     y: u32,
 }
 impl Position {
-    pub fn new(
-        upper_bound: (u32, u32), // x, y
-        lower_bound: (u32, u32), // x, y
-        x: u32,
-        y: u32,
-    ) -> Self {
-        Self {
-            upper_bound,
-            lower_bound,
-            x,
-            y,
-        }
+    fn _new(x: u32, y: u32) -> Self {
+        Self { x, y }
     }
-    pub fn move_xy(&self, x: u32, y: u32) -> Self {
-        let x = if x > self.upper_bound.0 {
-            self.upper_bound.0
-        } else if x < self.lower_bound.0 {
-            self.lower_bound.0
-        } else {
-            x
-        };
-        let y = if y > self.upper_bound.1 {
-            self.upper_bound.1
-        } else if y < self.lower_bound.1 {
-            self.lower_bound.1
-        } else {
-            y
-        };
-        Position::new(self.upper_bound, self.lower_bound, x, y)
+    pub fn new((x, y): (u32, u32)) -> Self {
+        Self::_new(x, y)
+    }
+    pub fn default() -> Self {
+        Self::_new(0, 0)
+    }
+
+    pub fn move_xy(&self, (x, y): (u32, u32)) -> Self {
+        Self::_new(x, y)
     }
     pub fn move_x(&self, x: u32) -> Self {
-        self.move_xy(x, self.y)
+        let (_, y) = self.into();
+        Self::_new(x, y)
     }
     pub fn move_y(&self, y: u32) -> Self {
-        self.move_xy(self.x, y)
+        let (x, _) = self.into();
+        Self::_new(x, y)
     }
+
     pub fn left(&self, step: u32) -> Self {
-        let y = self.y;
-        let x = self.x as i64 - step as i64;
-        let x = if x < self.lower_bound.0 as i64 {
-            self.lower_bound.0
-        } else {
-            x as u32
-        };
-        self.move_xy(x, y)
+        let (x, y) = self.into();
+        let step = std::cmp::min(u32::MIN + x, step);
+        Self::_new(x - step, y)
     }
     pub fn right(&self, step: u32) -> Self {
-        let y = self.y;
-        let x = self.x as i64 + step as i64;
-        let x = if x > self.upper_bound.0 as i64 {
-            self.upper_bound.0
-        } else {
-            x as u32
-        };
-        self.move_xy(x, y)
+        let (x, y) = self.into();
+        let step = std::cmp::min(u32::MAX - x, step);
+        Self::_new(x + step, y)
     }
     pub fn up(&self, step: u32) -> Self {
-        let x = self.x;
-        let y = self.y as i64 - step as i64;
-        let y = if y < self.lower_bound.1 as i64 {
-            self.lower_bound.1
-        } else {
-            y as u32
-        };
-        self.move_xy(x, y)
+        let (x, y) = self.into();
+        let step = std::cmp::min(u32::MIN + y, step);
+        Self::_new(x, y - step)
     }
     pub fn down(&self, step: u32) -> Self {
-        let x = self.x;
-        let y = self.y as i64 + step as i64;
-        let y = if y > self.upper_bound.1 as i64 {
-            self.upper_bound.1
-        } else {
-            y as u32
-        };
-        self.move_xy(x, y)
+        let (x, y) = self.into();
+        let step = std::cmp::min(u32::MAX - y, step);
+        Self::_new(x, y + step)
     }
+
+    pub fn put_in(&self, view: &View) -> Self {
+        let (x, y) = self.into();
+        let (org_x, org_y, w, h) = view.into();
+        let x = std::cmp::max(x, org_x);
+        let x = std::cmp::min(x, org_x + (w - 1));
+        let y = std::cmp::max(y, org_y);
+        let y = std::cmp::min(y, org_y + (h - 1));
+        Self::_new(x, y)
+    }
+
     pub fn app_road_with_fold<F, T>(&self, road: &Vec<Direction>, init: T, f: F) -> (Position, T)
     where
         F: Fn((u32, u32), T) -> T,
@@ -108,6 +86,7 @@ impl Position {
                     Direction::LowerRight => pos.down(1).right(1),
                     Direction::Left => pos.left(1),
                     Direction::Right => pos.right(1),
+                    Direction::Middle => pos,
                 };
                 (pos, f(pos.into(), item))
             })
@@ -123,13 +102,43 @@ impl Position {
                 Direction::LowerRight => pos.down(1).right(1),
                 Direction::Left => pos.left(1),
                 Direction::Right => pos.right(1),
+                Direction::Middle => pos,
             }
         })
+    }
+
+    pub fn get_direction(&self, target: &Position) -> Direction {
+        let (src_x, src_y) = self.into();
+        let (dst_x, dst_y) = target.into();
+        if src_x > dst_x && src_y < dst_y {
+            Direction::LowerLeft
+        } else if src_x > dst_x && src_y > dst_y {
+            Direction::UpperLeft
+        } else if src_x > dst_x && src_y == dst_y {
+            Direction::Left
+        } else if src_x < dst_x && src_y < dst_y {
+            Direction::LowerRight
+        } else if src_x < dst_x && src_y > dst_y {
+            Direction::UpperRight
+        } else if src_x < dst_x && src_y == dst_y {
+            Direction::Right
+        } else if src_x == dst_x && src_y < dst_y {
+            Direction::Down
+        } else if src_x == dst_x && src_y > dst_y {
+            Direction::Up
+        } else {
+            Direction::Middle
+        }
     }
 }
 
 impl From<Position> for (u32, u32) {
     fn from(item: Position) -> (u32, u32) {
+        (item.x, item.y)
+    }
+}
+impl From<&Position> for (u32, u32) {
+    fn from(item: &Position) -> (u32, u32) {
         (item.x, item.y)
     }
 }

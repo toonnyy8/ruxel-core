@@ -137,3 +137,13 @@ impl From<Rgba> for [u8; 4] {
         [item.rgb.r, item.rgb.g, item.rgb.b, item.alpha]
     }
 }
+impl From<&Rgba> for (u8, u8, u8, u8) {
+    fn from(item: &Rgba) -> (u8, u8, u8, u8) {
+        (item.rgb.r, item.rgb.g, item.rgb.b, item.alpha)
+    }
+}
+impl From<&Rgba> for [u8; 4] {
+    fn from(item: &Rgba) -> [u8; 4] {
+        [item.rgb.r, item.rgb.g, item.rgb.b, item.alpha]
+    }
+}

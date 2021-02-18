@@ -1,4 +1,4 @@
-use super::position;
+// use super::position;
 use super::tui;
 use super::unit;
 use serde_json;
@@ -138,57 +138,57 @@ pub fn draw(
     unit::Position::new(x, y)
 }
 
-pub fn draw_(
-    canvas: tui::Canvas,
-    cursor: position::Position,
-    color: tui::Rgba,
-    road: &Vec<position::Direction>,
-) {
-    cursor.app_road_with_fold(road, canvas, |(x, y), canvas| -> tui::Canvas {
-        let mut canvas = canvas;
-        canvas.data[y as usize][x as usize] = color;
-        canvas
-    });
-}
+// pub fn draw_(
+//     canvas: tui::Canvas,
+//     cursor: position::Position,
+//     color: tui::Rgba,
+//     road: &Vec<position::Direction>,
+// ) {
+//     cursor.app_road_with_fold(road, canvas, |(x, y), canvas| -> tui::Canvas {
+//         let mut canvas = canvas;
+//         canvas.data[y as usize][x as usize] = color;
+//         canvas
+//     });
+// }
 
-pub fn as_road(cmd: String) -> Vec<position::Direction> {
-    let s = cmd.as_bytes();
-    let mut road = Vec::new();
-    let mut step = 0;
-    for i in 0..s.len() {
-        match s[i] as char {
-            'h' | 'j' | 'k' | 'l' => step = if step == 0 { 1 } else { step },
-            '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
-                step = step * 10 + (s[i] - '0' as u8) as i64
-            }
-            _ => {}
-        };
-        match s[i] as char {
-            'h' => {
-                for _ in 0..step {
-                    road.push(position::Direction::Left);
-                }
-            }
-            'j' => {
-                for _ in 0..step {
-                    road.push(position::Direction::Down);
-                }
-            }
-            'k' => {
-                for _ in 0..step {
-                    road.push(position::Direction::Left);
-                }
-            }
-            'l' => {
-                for _ in 0..step {
-                    road.push(position::Direction::Right);
-                }
-            }
-            _ => {}
-        };
-    }
-    road
-}
+// pub fn as_road(cmd: String) -> Vec<position::Direction> {
+//     let s = cmd.as_bytes();
+//     let mut road = Vec::new();
+//     let mut step = 0;
+//     for i in 0..s.len() {
+//         match s[i] as char {
+//             'h' | 'j' | 'k' | 'l' => step = if step == 0 { 1 } else { step },
+//             '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
+//                 step = step * 10 + (s[i] - '0' as u8) as i64
+//             }
+//             _ => {}
+//         };
+//         match s[i] as char {
+//             'h' => {
+//                 for _ in 0..step {
+//                     road.push(position::Direction::Left);
+//                 }
+//             }
+//             'j' => {
+//                 for _ in 0..step {
+//                     road.push(position::Direction::Down);
+//                 }
+//             }
+//             'k' => {
+//                 for _ in 0..step {
+//                     road.push(position::Direction::Left);
+//                 }
+//             }
+//             'l' => {
+//                 for _ in 0..step {
+//                     road.push(position::Direction::Right);
+//                 }
+//             }
+//             _ => {}
+//         };
+//     }
+//     road
+// }
 
 pub fn msg_line_num(msg: String) -> i64 {
     let mut line_num = 1;
