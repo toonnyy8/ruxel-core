@@ -1,9 +1,0 @@
-{
-    "modules": [
-        { "name": "a", "path": "./a.rhai" },
-        { "name": "b", "path": "./b.rhai" }
-    ],
-    "init": ["./init.rhai"],
-    "render": ["./render.rhai"],
-    "cmds_content": ["./cmds_content.json"]
-}

@@ -1,0 +1,22 @@
+{
+    "core_port": 3030,
+    "addons": [
+        {
+            "name": "basic",
+            "port": 3031,
+            "start": {
+                "cmd": "cargo",
+                "dir": "../ruxel-basic",
+                "args": ["run", "--", "--core_port", "core.port", "--port", "basic.port"],
+                "expect": ""
+            }
+        }
+    ],
+    "proxies": [{ "addon": "basic", "route": "cursor", "proxy_route": "cursor" }],
+    "methods": [
+        {
+            "regex": "^.*$",
+            "run": [{ "addon": "basic", "route": "cmd" }]
+        }
+    ]
+}
