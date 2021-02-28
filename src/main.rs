@@ -1,4 +1,3 @@
-#![feature(impl_trait_in_bindings)]
 use bytes;
 use reqwest;
 mod ruxel;
@@ -12,6 +11,8 @@ async fn main() {
     let config = ruxel::Config::import("ruxel.json");
     config.start();
     let core_port = config.core_port();
+
+    let proxy_routes = config.proxy_routes();
 
     thread::spawn(move || {
         let client = reqwest::blocking::Client::new();
@@ -27,24 +28,17 @@ async fn main() {
 
     let print_post = warp::post()
         .and(warp::path("print"))
+        .and(warp::path::end())
         .and(warp::body::bytes())
         .map(|bytes: bytes::Bytes| {
             print!("{}", std::str::from_utf8(&bytes[..]).unwrap());
             io::stdout().flush().unwrap();
-            warp::reply()
-        });
 
-    // let cursor_post = warp::post()
-    //     .and(warp::path("get_one"))
-    //     .and(warp::body::bytes())
-    //     .map(|bytes: bytes::Bytes| {
-    //         print!("{}", std::str::from_utf8(&bytes[..]).unwrap());
-    //         io::stdout().flush().unwrap();
-    //         // warp::reply()
-    //         ""
-    //     });
+            warp::http::Response::builder().body(bytes::Bytes::new())
+        })
+        .boxed();
 
-    warp::serve(print_post)
+    warp::serve(proxy_routes.or(print_post).unify().boxed())
         .run(([127, 0, 0, 1], core_port))
         .await;
 }

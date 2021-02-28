@@ -12,7 +12,7 @@
             }
         }
     ],
-    "proxies": [{ "addon": "basic", "route": "cursor", "proxy_route": "cursor" }],
+    "proxies": [{ "addon": "basic", "route": "get_cursor", "proxy_route": "get_cursor" }],
     "methods": [
         {
             "regex": "^.*$",
