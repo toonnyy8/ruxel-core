@@ -1,6 +1,15 @@
 {
-    "core_port": 3030,
     "addons": [
+        {
+            "name": "core",
+            "port": 3030,
+            "start": {
+                "cmd": "",
+                "dir": "",
+                "args": [""],
+                "expect": ""
+            }
+        },
         {
             "name": "basic",
             "port": 3031,
@@ -18,12 +27,15 @@
     ],
     "methods": [
         {
-            "regex": "^.*$",
-            "run": [{ "addon": "basic", "route": "cmd" }]
+            "regex": "^exit$",
+            "run": [
+                { "addon": "basic", "route": "exit" },
+                { "addon": "core", "route": "exit" }
+            ]
         },
         {
-            "regex": "^exit$",
-            "run": [{ "addon": "basic", "route": "exit" }]
+            "regex": "^.*$",
+            "run": [{ "addon": "basic", "route": "cmd" }]
         }
     ]
 }

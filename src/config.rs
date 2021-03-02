@@ -5,7 +5,6 @@ use std::{fs, str::FromStr};
 
 #[derive(Debug, Clone)]
 pub struct Config {
-    core_port: u16,
     addons: Vec<Addon>,
     proxies: Vec<Proxy>,
     methods: Vec<Method>,
@@ -14,8 +13,6 @@ impl Config {
     pub fn import(path: &str) -> Self {
         let config_file = fs::read_to_string(path).expect("Something went wrong reading the file");
         let config_json: serde_json::Value = serde_json::from_str(&config_file).unwrap();
-
-        let core_port = config_json.get("core_port").unwrap().as_i64().unwrap() as u16;
 
         let addons = config_json
             .get("addons")
@@ -105,7 +102,6 @@ impl Config {
             .collect::<Vec<_>>();
 
         return Self {
-            core_port,
             addons,
             proxies,
             methods,
@@ -113,7 +109,6 @@ impl Config {
     }
 
     pub fn start(&self) {
-        let core_port = self.core_port;
         let addons = &self.addons;
         for addon in addons {
             let cmd = &addon.start.cmd;
@@ -126,30 +121,26 @@ impl Config {
                 .map(|arg| {
                     if arg.len() > 5 && &arg[arg.len() - 5..] == ".port" {
                         let addon_name = &arg[..arg.len() - 5];
-                        if addon_name == "core" {
-                            format!("{}", core_port)
-                        } else {
-                            format!(
-                                "{}",
-                                addons
-                                    .iter()
-                                    .find(|_addon| { _addon.name == addon_name })
-                                    .unwrap()
-                                    .port
-                            )
-                        }
+                        let port = addons
+                            .iter()
+                            .find(|_addon| _addon.name == addon_name)
+                            .unwrap()
+                            .port;
+                        format!("{}", port)
                     } else {
                         arg.clone()
                     }
                 })
                 .collect::<Vec<_>>();
             let expect = &addon.start.expect;
-            Command::new(cmd)
-                .current_dir(dir)
-                .arg("run")
-                .args(args)
-                .spawn()
-                .expect(expect.as_str());
+            println!("{}", addon.name);
+            if cmd != "" {
+                Command::new(cmd)
+                    .current_dir(dir)
+                    .args(args)
+                    .spawn()
+                    .expect(expect.as_str());
+            }
         }
     }
 
@@ -169,12 +160,16 @@ impl Config {
                 .post(url.as_str())
                 .send_body(Body::from_message(String::from(cmd)))
                 .await
-                .unwrap();
+                .err();
         }
     }
 
     pub fn core_port(&self) -> u16 {
-        self.core_port
+        self.addons
+            .iter()
+            .find(|addon| addon.name == "core")
+            .unwrap()
+            .port
     }
 
     pub fn proxy_config(&self, cfg: &mut web::ServiceConfig) {
