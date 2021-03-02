@@ -18,6 +18,7 @@ async fn main() {
             App::new()
                 .configure(|cfg: &mut web::ServiceConfig| config_clone.proxy_config(cfg))
                 .route("/print", web::post().to(print_handler))
+                .route("/exit", web::post().to(exit_handler))
         })
         .bind(format!("127.0.0.1:{}", core_port))?
         .run();
@@ -28,11 +29,7 @@ async fn main() {
     let http_client = client::Client::new();
     for line in std::io::stdin().lock().lines() {
         let cmd = line.unwrap();
-        if cmd == "exit" {
-            exit(0);
-        } else {
-            config_clone.run(&http_client, cmd.as_str()).await;
-        }
+        config_clone.run(&http_client, cmd.as_str()).await;
     }
 }
 
@@ -40,5 +37,9 @@ async fn print_handler(bytes: web::Bytes) -> Result<web::Bytes> {
     print!("{}", std::str::from_utf8(&bytes[..]).unwrap());
     io::stdout().flush().unwrap();
 
+    Ok(web::Bytes::new())
+}
+async fn exit_handler() -> Result<web::Bytes> {
+    exit(0);
     Ok(web::Bytes::new())
 }
