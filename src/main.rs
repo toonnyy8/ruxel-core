@@ -1,44 +1,44 @@
-use bytes;
-use reqwest;
 mod ruxel;
+use actix_web::{client, rt, web, App, HttpServer, Result};
 use std::io::{self, BufRead, Write};
 use std::process::exit;
 use std::thread;
-use warp::Filter;
 
-#[tokio::main]
+#[actix_web::main]
 async fn main() {
     let config = ruxel::Config::import("ruxel.json");
-    config.start();
     let core_port = config.core_port();
+    config.start();
 
-    let proxy_routes = config.proxy_routes();
-
+    let config_clone = config.clone();
     thread::spawn(move || {
-        let client = reqwest::blocking::Client::new();
-        for line in std::io::stdin().lock().lines() {
-            let cmd = line.unwrap();
-            if cmd == "exit" {
-                exit(0);
-            } else {
-                config.run(&client, cmd.as_str());
-            }
-        }
+        let sys = rt::System::new("http-server");
+
+        HttpServer::new(move || {
+            App::new()
+                .configure(|cfg: &mut web::ServiceConfig| config_clone.proxy_config(cfg))
+                .route("/print", web::post().to(print_handler))
+        })
+        .bind(format!("127.0.0.1:{}", core_port))?
+        .run();
+        sys.run()
     });
 
-    let print_post = warp::post()
-        .and(warp::path("print"))
-        .and(warp::path::end())
-        .and(warp::body::bytes())
-        .map(|bytes: bytes::Bytes| {
-            print!("{}", std::str::from_utf8(&bytes[..]).unwrap());
-            io::stdout().flush().unwrap();
+    let config_clone = config.clone();
+    let http_client = client::Client::new();
+    for line in std::io::stdin().lock().lines() {
+        let cmd = line.unwrap();
+        if cmd == "exit" {
+            exit(0);
+        } else {
+            config_clone.run(&http_client, cmd.as_str()).await;
+        }
+    }
+}
 
-            warp::http::Response::builder().body(bytes::Bytes::new())
-        })
-        .boxed();
+async fn print_handler(bytes: web::Bytes) -> Result<web::Bytes> {
+    print!("{}", std::str::from_utf8(&bytes[..]).unwrap());
+    io::stdout().flush().unwrap();
 
-    warp::serve(proxy_routes.or(print_post).unify().boxed())
-        .run(([127, 0, 0, 1], core_port))
-        .await;
+    Ok(web::Bytes::new())
 }

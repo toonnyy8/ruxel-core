@@ -12,11 +12,18 @@
             }
         }
     ],
-    "proxies": [{ "addon": "basic", "route": "get_cursor", "proxy_route": "get_cursor" }],
+    "proxies": [
+        { "addon": "basic", "route": "get_cursor", "proxy_route": "get_cursor" },
+        { "addon": "basic", "route": "set_cursor", "proxy_route": "set_cursor" }
+    ],
     "methods": [
         {
             "regex": "^.*$",
             "run": [{ "addon": "basic", "route": "cmd" }]
+        },
+        {
+            "regex": "^exit$",
+            "run": [{ "addon": "basic", "route": "exit" }]
         }
     ]
 }

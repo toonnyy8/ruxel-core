@@ -1,10 +1,7 @@
-use bytes;
-use regex;
-use reqwest;
+use actix_web::{client, dev::Body, web, Result};
 use serde_json;
 use std::process::Command;
 use std::{fs, str::FromStr};
-use warp::Filter;
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -156,7 +153,7 @@ impl Config {
         }
     }
 
-    pub fn run(&self, client: &reqwest::blocking::Client, cmd: &str) {
+    pub async fn run(&self, http_client: &client::Client, cmd: &str) {
         let method = self
             .methods
             .iter()
@@ -167,10 +164,11 @@ impl Config {
                 "http://localhost:{}/{}",
                 self.addons[app.addon_idx].port, app.route
             );
-            client
+
+            http_client
                 .post(url.as_str())
-                .body(String::from(cmd))
-                .send()
+                .send_body(Body::from_message(String::from(cmd)))
+                .await
                 .unwrap();
         }
     }
@@ -179,55 +177,37 @@ impl Config {
         self.core_port
     }
 
-    pub fn proxy_routes(
-        &self,
-    ) -> warp::filters::BoxedFilter<(Result<warp::http::Response<bytes::Bytes>, warp::http::Error>,)>
-    {
-        let _self = self.clone();
-        let mut routes = Vec::new();
-
-        for proxy in _self.proxies {
+    pub fn proxy_config(&self, cfg: &mut web::ServiceConfig) {
+        for proxy in &self.proxies {
             let target_url = format!(
                 "http://localhost:{}/{}",
-                _self.addons[proxy.addon_idx].port, proxy.route
+                self.addons[proxy.addon_idx].port, proxy.route
             );
-
-            let route = warp::post()
-                .and(warp::path(proxy.proxy_route))
-                .and(warp::path::end())
-                .and(warp::any().map(move || reqwest::Client::new()))
-                .and(warp::any().map(move || target_url.clone()))
-                .and(warp::body::bytes())
-                .boxed()
-                .and_then(
-                    |http_client: reqwest::Client, target_url: String, bytes: bytes::Bytes| async move {
-                        let is_ok = http_client
-                            .post(target_url.as_str())
-                            .body(bytes)
-                            .send()
-                            .await;
-
-                        match is_ok {
-                            Ok(is_ok) => match is_ok.bytes().await {
-                                Ok(ret) => Ok(warp::http::Response::builder().body(ret)),
-                                Err(_) => Err(warp::reject::not_found()),
-                            },
-                            Err(_) => Err(warp::reject::not_found()),
-                        }
-                    },
-                )
-                .boxed();
-            routes.push(route);
+            cfg.service(
+                web::scope(proxy.proxy_route.as_str())
+                    .data(ProxyUrl { url: target_url })
+                    .route("", web::post().to(proxy_hanbler)),
+            );
         }
-        let init = routes[0].clone();
-        // warp::any()
-        //     .map(|| warp::http::Response::builder().body(bytes::Bytes::new()))
-        //     .boxed();
-        routes[1..].iter().fold(init, |routes, route| {
-            routes.or(route.clone()).unify().boxed()
-        })
     }
 }
+
+struct ProxyUrl {
+    url: String,
+}
+async fn proxy_hanbler(bytes: web::Bytes, proxy: web::Data<ProxyUrl>) -> Result<web::Bytes> {
+    let http_client = client::Client::new();
+    let ret = http_client
+        .post(proxy.url.as_str())
+        .send_body(bytes)
+        .await
+        .unwrap()
+        .body()
+        .await
+        .unwrap();
+    Ok(ret)
+}
+
 #[derive(Debug, Clone)]
 struct Addon {
     name: String,
@@ -248,45 +228,6 @@ struct Proxy {
     pub route: String,
     pub proxy_route: String,
 }
-// impl Proxy {
-//     fn build(
-//         &'static self,
-//         core_port: u16,
-//         addon_port: u16,
-//     ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-//         let proxy_url = format!("http://localhost:{}/{}", core_port, self.proxy_route);
-
-//         warp::post()
-//             .and(warp::path(proxy_url))
-//             .and(warp::any().map(move || self.clone()))
-//             .and(warp::any().map(move || reqwest::Client::new()))
-//             .and(warp::body::bytes())
-//             .and_then(
-//                 |proxy: Proxy, http_client: reqwest::Client, bytes: bytes::Bytes| async move {
-//                     // &self;
-//                     proxy;
-//                     // let target_url = format!("http://localhost:{}/{}", addon_port, self.route);
-//                     // let is_ok = http_client
-//                     //     .post(target_url.as_str())
-//                     //     .body(bytes)
-//                     //     .send()
-//                     //     .await;
-//                     // match is_ok {
-//                     //     Ok(is_ok) => match is_ok.bytes().await {
-//                     //         Ok(ret) => Ok(warp::reply()),
-//                     //         Err(_) => Err(warp::reject::not_found()),
-//                     //     },
-//                     //     Err(_) => Err(warp::reject::not_found()),
-//                     // }
-//                     if true {
-//                         Ok(warp::reply())
-//                     } else {
-//                         Err(warp::reject::not_found())
-//                     }
-//                 },
-//             )
-//     }
-// }
 
 #[derive(Debug, Clone)]
 struct Method {
