@@ -25,6 +25,7 @@ async fn main() {
                 .route("/print", web::post().to(print_handler))
                 .route("/exit", web::post().to(exit_handler))
                 .route("/load", web::post().to(load_handler))
+                .route("/save", web::post().to(save_handler))
         })
         .bind(format!("127.0.0.1:{}", core_port))?
         .run();
@@ -50,13 +51,15 @@ async fn print_handler(bytes: web::Bytes) -> Result<web::Bytes> {
     Ok(web::Bytes::new())
 }
 async fn exit_handler() -> Result<web::Bytes> {
-    exit(0);
+    async { exit(0) }.await;
     Ok(web::Bytes::new())
 }
 
-async fn save_handler(bytes: web::Bytes) -> Result<()> {
+async fn save_handler(state: web::Data<State>, bytes: web::Bytes) -> Result<web::Bytes> {
     let file_name = std::str::from_utf8(&bytes[..]).unwrap();
-    Ok(())
+    let canvas = state.canvas.lock().unwrap();
+    canvas.save(file_name).unwrap();
+    Ok(web::Bytes::new())
 }
 async fn load_handler(state: web::Data<State>, bytes: web::Bytes) -> Result<web::Bytes> {
     let mut canvas = state.canvas.lock().unwrap();
