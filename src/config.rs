@@ -87,14 +87,15 @@ impl Config {
                     .as_array()
                     .unwrap()
                     .iter()
-                    .map(|app| {
-                        let addon_name = app.get("addon").unwrap().as_str().unwrap();
-                        let addon_idx = addons
+                    .map(|act| {
+                        let addon_name = act.get("addon").unwrap().as_str().unwrap();
+                        let port = addons
                             .iter()
-                            .position(|addon| addon.name == addon_name)
-                            .unwrap();
-                        let route = String::from(app.get("route").unwrap().as_str().unwrap());
-                        App { addon_idx, route }
+                            .find(|addon| addon.name == addon_name)
+                            .unwrap()
+                            .port;
+                        let route = String::from(act.get("route").unwrap().as_str().unwrap());
+                        Act { port, route }
                     })
                     .collect::<Vec<_>>();
                 Method { reg, run }
@@ -133,7 +134,7 @@ impl Config {
                 })
                 .collect::<Vec<_>>();
             let expect = &addon.start.expect;
-            println!("{}", addon.name);
+
             if cmd != "" {
                 Command::new(cmd)
                     .current_dir(dir)
@@ -150,14 +151,9 @@ impl Config {
             .iter()
             .find(|method| method.reg.is_match(cmd))
             .unwrap();
-        for app in &method.run {
-            let url = format!(
-                "http://localhost:{}/{}",
-                self.addons[app.addon_idx].port, app.route
-            );
-
+        for act in &method.run {
             http_client
-                .post(url.as_str())
+                .post(act.as_url())
                 .send_body(Body::from_message(String::from(cmd)))
                 .await
                 .err();
@@ -227,11 +223,16 @@ struct Proxy {
 #[derive(Debug, Clone)]
 struct Method {
     reg: regex::Regex,
-    run: Vec<App>,
+    run: Vec<Act>,
 }
 
 #[derive(Debug, Clone)]
-struct App {
-    addon_idx: usize,
+struct Act {
+    port: u16,
     route: String,
+}
+impl Act {
+    fn as_url(&self) -> String {
+        format!("http://localhost:{}/{}", self.port, self.route)
+    }
 }
