@@ -1,7 +1,9 @@
-mod ruxel;
 use actix_web::{client, rt, web, App, HttpServer, Result};
+use image::{self};
+mod ruxel;
 use std::io::{self, BufRead, Write};
 use std::process::exit;
+use std::sync::Mutex;
 use std::thread;
 
 #[actix_web::main]
@@ -16,9 +18,13 @@ async fn main() {
 
         HttpServer::new(move || {
             App::new()
+                .app_data(State {
+                    canvas: Mutex::new(image::ImageBuffer::new(0, 0)),
+                })
                 .configure(|cfg: &mut web::ServiceConfig| config_clone.proxy_config(cfg))
                 .route("/print", web::post().to(print_handler))
                 .route("/exit", web::post().to(exit_handler))
+                .route("/load", web::post().to(load_handler))
         })
         .bind(format!("127.0.0.1:{}", core_port))?
         .run();
@@ -33,6 +39,10 @@ async fn main() {
     }
 }
 
+struct State {
+    canvas: Mutex<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>>,
+}
+
 async fn print_handler(bytes: web::Bytes) -> Result<web::Bytes> {
     print!("{}", std::str::from_utf8(&bytes[..]).unwrap());
     io::stdout().flush().unwrap();
@@ -41,5 +51,18 @@ async fn print_handler(bytes: web::Bytes) -> Result<web::Bytes> {
 }
 async fn exit_handler() -> Result<web::Bytes> {
     exit(0);
+    Ok(web::Bytes::new())
+}
+
+async fn save_handler(bytes: web::Bytes) -> Result<()> {
+    let file_name = std::str::from_utf8(&bytes[..]).unwrap();
+    Ok(())
+}
+async fn load_handler(state: web::Data<State>, bytes: web::Bytes) -> Result<web::Bytes> {
+    let mut canvas = state.canvas.lock().unwrap();
+    let file_name = std::str::from_utf8(&bytes[..]).unwrap();
+    let img = image::io::Reader::open(file_name)?.decode().unwrap();
+    let img_buf = img.as_rgba8().unwrap().clone();
+    *canvas = img_buf;
     Ok(web::Bytes::new())
 }
