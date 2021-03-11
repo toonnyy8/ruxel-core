@@ -1,2 +1,2 @@
 # ruxel
-ternimal pixel editor
+terminal pixel editor
