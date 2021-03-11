@@ -1,3 +1,4 @@
+use super::State;
 use actix_web::{client, dev::Body, web, Result};
 use serde_json;
 use std::process::Command;
@@ -186,9 +187,13 @@ impl Config {
 struct ProxyUrl {
     url: String,
 }
-async fn proxy_hanbler(bytes: web::Bytes, proxy: web::Data<ProxyUrl>) -> Result<web::Bytes> {
-    let http_client = client::Client::new();
-    let ret = http_client
+async fn proxy_hanbler(
+    state: web::Data<State>,
+    proxy: web::Data<ProxyUrl>,
+    bytes: web::Bytes,
+) -> Result<web::Bytes> {
+    let ret = state
+        .http_client
         .post(proxy.url.as_str())
         .send_body(bytes)
         .await

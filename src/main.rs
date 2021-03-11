@@ -1,4 +1,4 @@
-use actix_web::{client, rt, web, App, HttpServer, Result};
+use actix_web::{client, dev::Body, rt, web, App, HttpServer, Result};
 use image::{self};
 mod ruxel;
 use std::io::{self, BufRead, Write};
@@ -12,36 +12,40 @@ async fn main() {
     let core_port = config.core_port();
     config.start();
 
-    let config_clone = config.clone();
     thread::spawn(move || {
         let sys = rt::System::new("http-server");
 
         HttpServer::new(move || {
             App::new()
-                .app_data(State {
+                .app_data(web::Data::new(ruxel::State {
                     canvas: Mutex::new(image::ImageBuffer::new(0, 0)),
-                })
-                .configure(|cfg: &mut web::ServiceConfig| config_clone.proxy_config(cfg))
+                    http_client: client::Client::new(),
+                    config: config.clone(),
+                }))
+                .configure(|cfg: &mut web::ServiceConfig| config.proxy_config(cfg))
                 .route("/print", web::post().to(print_handler))
                 .route("/exit", web::post().to(exit_handler))
                 .route("/load", web::post().to(load_handler))
                 .route("/save", web::post().to(save_handler))
+                .route("/cmd", web::post().to(cmd_handler))
         })
         .bind(format!("127.0.0.1:{}", core_port))?
         .run();
+
         sys.run()
     });
 
-    let config_clone = config.clone();
     let http_client = client::Client::new();
     for line in std::io::stdin().lock().lines() {
         let cmd = line.unwrap();
-        config_clone.run(&http_client, cmd.as_str()).await;
+        http_client
+            .post(format!("http://localhost:{}/cmd", core_port))
+            .send_body(Body::from_message(String::from(cmd)))
+            .await
+            .err();
     }
-}
 
-struct State {
-    canvas: Mutex<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>>,
+    thread::park();
 }
 
 async fn print_handler(bytes: web::Bytes) -> Result<web::Bytes> {
@@ -50,18 +54,23 @@ async fn print_handler(bytes: web::Bytes) -> Result<web::Bytes> {
 
     Ok(web::Bytes::new())
 }
+async fn cmd_handler(state: web::Data<ruxel::State>, bytes: web::Bytes) -> Result<web::Bytes> {
+    let cmd = std::str::from_utf8(&bytes[..]).unwrap();
+    state.config.run(&state.http_client, cmd).await;
+    Ok(web::Bytes::new())
+}
 async fn exit_handler() -> Result<web::Bytes> {
     async { exit(0) }.await;
     Ok(web::Bytes::new())
 }
 
-async fn save_handler(state: web::Data<State>, bytes: web::Bytes) -> Result<web::Bytes> {
+async fn save_handler(state: web::Data<ruxel::State>, bytes: web::Bytes) -> Result<web::Bytes> {
     let file_name = std::str::from_utf8(&bytes[..]).unwrap();
     let canvas = state.canvas.lock().unwrap();
     canvas.save(file_name).unwrap();
     Ok(web::Bytes::new())
 }
-async fn load_handler(state: web::Data<State>, bytes: web::Bytes) -> Result<web::Bytes> {
+async fn load_handler(state: web::Data<ruxel::State>, bytes: web::Bytes) -> Result<web::Bytes> {
     let mut canvas = state.canvas.lock().unwrap();
     let file_name = std::str::from_utf8(&bytes[..]).unwrap();
     let img = image::io::Reader::open(file_name)?.decode().unwrap();

@@ -34,8 +34,22 @@
             ]
         },
         {
+            "regex": "^(([1-9][0-9]*)?[hjkl])+$",
+            "run": [
+                { "addon": "basic", "route": "move" },
+                { "addon": "basic", "route": "render" }
+            ]
+        },
+        {
+            "regex": "^d(([1-9][0-9]*)?[hjkl])*$",
+            "run": [
+                { "addon": "basic", "route": "draw" },
+                { "addon": "basic", "route": "render" }
+            ]
+        },
+        {
             "regex": "^.*$",
-            "run": [{ "addon": "basic", "route": "cmd" }]
+            "run": [{ "addon": "basic", "route": "render" }]
         }
     ]
 }
