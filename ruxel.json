@@ -16,7 +16,22 @@
             "start": {
                 "cmd": "cargo",
                 "dir": "../ruxel-basic",
-                "args": ["run", "--", "--core_port", "core.port", "--port", "basic.port"],
+                "args": [
+                    "run",
+                    "--",
+                    "--core_port",
+                    "core.port",
+                    "--port",
+                    "basic.port",
+                    "--up",
+                    "k",
+                    "--down",
+                    "j",
+                    "--left",
+                    "h",
+                    "--right",
+                    "l"
+                ],
                 "expect": ""
             }
         }
@@ -25,31 +40,19 @@
         { "addon": "basic", "route": "get_cursor", "proxy_route": "get_cursor" },
         { "addon": "basic", "route": "set_cursor", "proxy_route": "set_cursor" }
     ],
-    "methods": [
-        {
-            "regex": "^exit$",
-            "run": [
-                { "addon": "basic", "route": "exit" },
-                { "addon": "core", "route": "exit" }
-            ]
-        },
-        {
-            "regex": "^(([1-9][0-9]*)?[hjkl])+$",
-            "run": [
-                { "addon": "basic", "route": "move" },
-                { "addon": "basic", "route": "render" }
-            ]
-        },
-        {
-            "regex": "^d(([1-9][0-9]*)?[hjkl])*$",
-            "run": [
-                { "addon": "basic", "route": "draw" },
-                { "addon": "basic", "route": "render" }
-            ]
-        },
-        {
-            "regex": "^.*$",
-            "run": [{ "addon": "basic", "route": "render" }]
-        }
-    ]
+    "mode": {
+        "exit": [
+            { "addon": "basic", "route": "exit" },
+            { "addon": "core", "route": "exit" }
+        ],
+        "m": [
+            { "addon": "basic", "route": "move" },
+            { "addon": "basic", "route": "render" }
+        ],
+        "d": [
+            { "addon": "basic", "route": "draw" },
+            { "addon": "basic", "route": "render" }
+        ],
+        "default": [{ "addon": "basic", "route": "render" }]
+    }
 }

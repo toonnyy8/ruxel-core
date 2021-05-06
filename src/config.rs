@@ -1,14 +1,16 @@
-use super::State;
 use actix_web::{client, dev::Body, web, Result};
+use regex;
 use serde_json;
+use std::collections::HashMap;
+use std::fs;
 use std::process::Command;
-use std::{fs, str::FromStr};
 
 #[derive(Debug, Clone)]
 pub struct Config {
     addons: Vec<Addon>,
     proxies: Vec<Proxy>,
-    methods: Vec<Method>,
+    // methods: Vec<Method>,
+    modes: HashMap<String, Vec<Act>>,
 }
 impl Config {
     pub fn import(path: &str) -> Self {
@@ -73,40 +75,39 @@ impl Config {
             })
             .collect::<Vec<_>>();
 
-        let methods = config_json
-            .get("methods")
+        let modes = config_json
+            .get("mode")
             .unwrap()
-            .as_array()
+            .as_object()
             .unwrap()
             .iter()
-            .map(|method| {
-                let reg = method.get("regex").unwrap().as_str().unwrap();
-                let reg = regex::Regex::from_str(reg).unwrap();
-                let run = method
-                    .get("run")
-                    .unwrap()
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .map(|act| {
-                        let addon_name = act.get("addon").unwrap().as_str().unwrap();
-                        let port = addons
-                            .iter()
-                            .find(|addon| addon.name == addon_name)
-                            .unwrap()
-                            .port;
-                        let route = String::from(act.get("route").unwrap().as_str().unwrap());
-                        Act { port, route }
-                    })
-                    .collect::<Vec<_>>();
-                Method { reg, run }
-            })
-            .collect::<Vec<_>>();
+            .fold(
+                HashMap::<String, Vec<Act>>::new(),
+                |mut prev, (mode_name, mode_act)| {
+                    let acts = mode_act
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|act| {
+                            let addon_name = act.get("addon").unwrap().as_str().unwrap();
+                            let port = addons
+                                .iter()
+                                .find(|addon| addon.name == addon_name)
+                                .unwrap()
+                                .port;
+                            let route = String::from(act.get("route").unwrap().as_str().unwrap());
+                            Act { port, route }
+                        })
+                        .collect::<Vec<_>>();
+                    prev.insert(mode_name.clone(), acts);
+                    prev
+                },
+            );
 
         return Self {
             addons,
             proxies,
-            methods,
+            modes,
         };
     }
 
@@ -146,16 +147,21 @@ impl Config {
         }
     }
 
-    pub async fn run(&self, http_client: &client::Client, cmd: &str) {
-        let method = self
-            .methods
-            .iter()
-            .find(|method| method.reg.is_match(cmd))
-            .unwrap();
-        for act in &method.run {
+    pub async fn run(&self, http_client: &client::Client, mode: &str, param: &str) {
+        let acts = match self.modes.get(mode) {
+            Some(acts) => acts.clone(),
+            None => {
+                let default_acts = match self.modes.get("default") {
+                    Some(default_acts) => default_acts.clone(),
+                    None => Vec::new(),
+                };
+                default_acts
+            }
+        };
+        for act in acts {
             http_client
                 .post(act.as_url())
-                .send_body(Body::from_message(String::from(cmd)))
+                .send_body(Body::from_message(String::from(param)))
                 .await
                 .err();
         }
@@ -188,12 +194,11 @@ struct ProxyUrl {
     url: String,
 }
 async fn proxy_hanbler(
-    state: web::Data<State>,
+    http_client: web::Data<client::Client>,
     proxy: web::Data<ProxyUrl>,
     bytes: web::Bytes,
 ) -> Result<web::Bytes> {
-    let ret = state
-        .http_client
+    let ret = http_client
         .post(proxy.url.as_str())
         .send_body(bytes)
         .await
